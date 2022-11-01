@@ -7,7 +7,7 @@ import (
 )
 
 type Task struct {
-	Subject string `json:"id"`
+	Subject string `json:"subject"`
 	Link    string `json:"link"`
 	Body    string `json:"body"`
 }
