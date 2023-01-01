@@ -2,6 +2,7 @@ package main
 
 import (
 	"crudzoo-go/handler"
+	_ "github.com/jackc/pgx/v4/stdlib"
 	"net/http"
 )
 
