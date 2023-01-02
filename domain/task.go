@@ -2,7 +2,7 @@ package domain
 
 type Task struct {
 	Id      string
-	content TaskContent
+	Content TaskContent
 }
 
 type TaskContent struct {

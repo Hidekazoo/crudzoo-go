@@ -1,9 +1,14 @@
-FROM golang:1.17-bullseye as builder
+FROM golang:1.18-bullseye as builder
 WORKDIR /opt/app
 COPY go.mod ./
-RUN go mod download
 COPY ./*.go ./
 COPY ./handler/*.go ./handler/
+COPY ./infra/*.go ./infra/
+COPY ./repository/*.go ./repository/
+COPY ./usecase/*.go ./usecase/
+COPY ./domain/*.go ./domain/
+RUN go mod download
+RUN go mod tidy
 RUN go build -trimpath -ldflags="-w -s" -o "app"
 
 FROM gcr.io/distroless/base-debian11

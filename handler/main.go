@@ -1,12 +1,12 @@
 package handler
 
 import (
-	"database/sql"
+	"crudzoo-go/infra"
+	"crudzoo-go/repository"
+	"crudzoo-go/usecase"
 	"encoding/json"
 	"fmt"
-	uuid "github.com/jackc/pgtype/ext/gofrs-uuid"
-	"github.com/kelseyhightower/envconfig"
-	"log"
+	"github.com/google/uuid"
 	"net/http"
 )
 
@@ -22,62 +22,22 @@ type Config struct {
 }
 
 func Tasks(w http.ResponseWriter, r *http.Request) {
-	//tasks := []Task{
-	//	{Id: "id1", Subject: "subject1", Link: "https://example.com", Body: "body1"},
-	//	{Id: "id2", Subject: "subject2", Link: "https://example.com", Body: "body2"},
-	//	{Id: "id3", Subject: "subject3", Link: "https://example.com", Body: "body3"},
-	//}
-	var c Config
-	err := envconfig.Process("", &c)
-	if err != nil {
-		log.Fatalf("env error %v", err)
-	}
+	dbImpl := infra.DBImple{}
+	tasksPort := repository.TasksRepository{DB: &dbImpl}
+	tasks, _ := usecase.FindTasks(&tasksPort)
 
-	db, err := sql.Open("pgx", c.DBSetting)
-	if nil != err {
-		log.Fatal("infra connected error")
-	}
-	err = db.Ping()
-	if err != nil {
-		log.Fatal("infra ping error")
-	}
-	type TaskDB struct {
-		TaskID  uuid.UUID
-		Subject string
-		Link    string
-		Body    string
-	}
-
-	rows, err := db.Query(`SELECT task_id, subject, link, body FROM tasks ORDER BY created_at desc;`)
-	if err != nil {
-		log.Fatalf("query all tasks: %v", err)
-	}
-	defer rows.Close()
-
-	var tasks []*Task
-	for rows.Next() {
-		var (
-			taskID              uuid.UUID
-			subject, link, body string
-		)
-		if err := rows.Scan(&taskID, &subject, &link, &body); err != nil {
-			log.Fatalf("scan the tasks : %v", err)
-		}
-		tasks = append(tasks, &Task{
-			Id:      taskID,
-			Subject: subject,
-			Link:    link,
-			Body:    body,
+	var tasksRes []*Task
+	for _, v := range tasks {
+		id, _ := uuid.Parse(v.Id)
+		tasksRes = append(tasksRes, &Task{
+			Id:      id,
+			Subject: v.Content.Subject,
+			Link:    v.Content.Link,
+			Body:    v.Content.Body,
 		})
 	}
-	if err := rows.Close(); err != nil {
-		log.Fatalf("rows close: %v", err)
-	}
-	if err := rows.Err(); err != nil {
-		log.Fatalf("scan the tasks : %v", err)
-	}
 	res := map[string][]*Task{
-		"data": tasks,
+		"data": tasksRes,
 	}
 	w.Header().Set("Content-Type", "application/json")
 	switch r.Method {
